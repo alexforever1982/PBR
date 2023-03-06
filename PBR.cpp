@@ -3,6 +3,7 @@
 
 #include "GLAD/glad.h"
 #include "Shader.h"
+#include "Texture.h"
 
 #include "GLFW/glfw3.h"
 
