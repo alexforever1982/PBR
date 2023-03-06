@@ -133,13 +133,6 @@ void Shader::SetInt(const std::string &name, int value) const noexcept
 
 //==============================================================================
 
-void Shader::SetUint(const std::string &name, uint value) const noexcept
-{
-	glUniform1ui(GetLocation(name), value);
-}
-
-//==============================================================================
-
 void Shader::SetFloat(const std::string &name, float value) const noexcept
 {
 	glUniform1f(GetLocation(name), value);
