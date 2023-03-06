@@ -53,6 +53,13 @@ Shader::Shader() noexcept :
 
 //==============================================================================
 
+Shader::~Shader() noexcept
+{
+	glDeleteProgram(program);
+}
+
+//==============================================================================
+
 void Shader::Init(const std::string &vcode, const std::string &fcode) noexcept
 {
 	const char *vs = vcode.c_str();
