@@ -20,7 +20,8 @@ private:
 	int GetLocation(const std::string &name) const noexcept;
 
 public:
-	Shader() noexcept;
+	Shader()  noexcept;
+	~Shader() noexcept;
 
 	void Init (const std::string &vcode, const std::string &fcode) noexcept;
 	void Load (const std::string &vpath, const std::string &fpath) noexcept;
