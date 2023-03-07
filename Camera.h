@@ -18,7 +18,9 @@ private:
 	float pitch;
 	float speed;
 	float sensitivity;
-	float zoom;
+	float fov;
+	float near;
+	float far;
 
 private:
 	void Update() noexcept;
@@ -27,13 +29,10 @@ public:
 	enum class Direction { FORWARD, BACKWARD, LEFT, RIGHT };
 
 public:
-	Camera(const glm::vec3 &position = glm::vec3(0.0f, 0.0f, 0.0f),
-		   const glm::vec3 &up       = glm::vec3(0.0f, 1.0f, 0.0f),
-		   float yaw   = -90.0f,
-		   float pitch = 0.0f) noexcept;
+	Camera(const glm::vec3 &position) noexcept;
 
 	glm::mat4 GetView() const noexcept;
-	float GetZoom()     const noexcept;
+	glm::mat4 GetProjection(float aspect) const noexcept;
 
 	void Move(Direction direction, float dt) noexcept;
 	void Rotate (float dx, float dy)         noexcept;
