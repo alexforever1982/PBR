@@ -1,6 +1,8 @@
 
 #include "Camera.h"
 
+#include <algorithm>
+
 #include <glm/gtc/matrix_transform.hpp>
 
 //==============================================================================
@@ -18,14 +20,17 @@ void Camera::Update() noexcept
 
 //==============================================================================
 
-Camera::Camera(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch) noexcept :
+Camera::Camera(const glm::vec3 &position) noexcept :
 	position(position),
 	front(0.0f, 0.0f, -1.0f),
-	yaw(yaw),
-	pitch(pitch),
+	up(0.0f, 1.0f, 0.0f),
+	yaw(-90.0f),
+	pitch(0.0),
 	speed(2.5),
 	sensitivity(0.1f),
-	zoom(45.0f)
+	fov(45.0f),
+	near(0.1f),
+	far(100.0f)
 {
 	Update();
 }
@@ -39,9 +44,9 @@ glm::mat4 Camera::GetView() const noexcept
 
 //==============================================================================
 
-float Camera::GetZoom() const noexcept
+glm::mat4 Camera::GetProjection(float aspect) const noexcept
 {
-	return zoom;
+	return glm::perspective(glm::radians(fov), aspect, near, far);
 }
 
 //==============================================================================
@@ -83,15 +88,14 @@ void Camera::Rotate(float dx, float dy) noexcept
 
 void Camera::Zoom(float scroll) noexcept
 {
-	zoom -= scroll;
-	if (zoom < 1.0f)
-	{
-		zoom = 1.0f;
-	}
-	if (zoom > 45.0f)
-	{
-		zoom = 45.0f;
-	}
+	fov -= scroll;
+	//fov = std::max(1.0f, std::min(45.0f, fov));
+
+	if (fov < 1.0f)
+		fov = 1.0f;
+
+	if (fov > 45.0f)
+		fov = 45.0f;
 }
 
 //==============================================================================
