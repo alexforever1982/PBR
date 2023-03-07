@@ -184,14 +184,11 @@ void Render()
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	const auto fov    = glm::radians(camera.GetZoom());
 	const auto aspect = static_cast<float>(width) / static_cast<float>(height);
-	const auto near   = 0.1f;
-	const auto far    = 100.0f;
 
 	const auto model      = glm::mat4(1.0f);
 	const auto view       = camera.GetView();
-	const auto projection = glm::perspective(fov, aspect, near, far);
+	const auto projection = camera.GetProjection(aspect);
 
 	shader.Use();
 	shader.SetMat4("model", model);
