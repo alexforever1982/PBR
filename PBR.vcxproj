@@ -130,6 +130,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GLAD\glad.h" />
     <ClInclude Include="GLAD\khrplatform.h" />
     <ClInclude Include="Shader.h" />
@@ -137,6 +138,7 @@
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GLAD\glad.c" />
     <ClCompile Include="PBR.cpp" />
     <ClCompile Include="Shader.cpp" />
