@@ -29,7 +29,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	auto *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PBR", nullptr, nullptr);
+	auto window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PBR", nullptr, nullptr);
 
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, OnResize);
