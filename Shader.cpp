@@ -62,15 +62,15 @@ Shader::~Shader() noexcept
 
 void Shader::Init(const std::string &vcode, const std::string &fcode) noexcept
 {
-	const char *vs = vcode.c_str();
-	const char *fs = fcode.c_str();
+	const auto vs = vcode.c_str();
+	const auto fs = fcode.c_str();
 
-	unsigned int vertex = glCreateShader(GL_VERTEX_SHADER);
+	auto vertex = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex, 1, &vs, nullptr);
 	glCompileShader(vertex);
 	CheckError(vertex, "vertex");
 
-	unsigned int fragment = glCreateShader(GL_FRAGMENT_SHADER);
+	auto fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragment, 1, &fs, nullptr);
 	glCompileShader(fragment);
 	CheckError(vertex, "fragment");
