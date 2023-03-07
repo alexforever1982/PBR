@@ -1,13 +1,13 @@
 
 #include <iostream>
 
+#include <glm/glm.hpp>
+
 #include "GLAD/glad.h"
 #include "Shader.h"
 #include "Texture.h"
 
 #include "GLFW/glfw3.h"
-
-#include <glm/glm.hpp>
 
 //==============================================================================
 
