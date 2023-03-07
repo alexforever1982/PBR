@@ -16,9 +16,7 @@ void Texture::Init(const unsigned char *data) noexcept
 	}
 
 	glBindTexture(GL_TEXTURE_2D, texture);
-
-	SetParameters();
-
+	
 	if (components == 3)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -29,7 +27,9 @@ void Texture::Init(const unsigned char *data) noexcept
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	}
-
+	
+	SetParameters();
+	
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -68,7 +68,7 @@ Texture::~Texture() noexcept
 void Texture::Load(const std::string &path, bool flip) noexcept
 {
 	stbi_set_flip_vertically_on_load(flip);
-	auto data = stbi_load(path.c_str(), &width, &height, &components, 0);
+	const auto data = stbi_load(path.c_str(), &width, &height, &components, 0);
 	if (data)
 	{
 		Init(data);
