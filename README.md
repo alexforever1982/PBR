@@ -1,3 +1,3 @@
 # PBR
-physically based rendering
+Physically Based Rendering
 (in progress)
