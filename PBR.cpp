@@ -6,6 +6,8 @@
 
 #include "GLAD/glad.h"
 #include "Camera.h"
+#include "Cubemap.h"
+#include "Skybox.h"
 #include "Shader.h"
 #include "Texture.h"
 
@@ -30,7 +32,12 @@ const auto height = 720u;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-Shader shader;
+Shader simple_shader;
+//Shader cubemap_shader;
+Shader skybox_shader;
+
+Cubemap *cubemap;
+Skybox *skybox;
 
 unsigned int VAO;
 unsigned int VBO;
@@ -54,6 +61,23 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+	glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	//unsigned int FBO;
+	//unsigned int RBO;
+	//glGenFramebuffers(1, &FBO);
+	//glGenRenderbuffers(1, &RBO);
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	//glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	//Texture hdr;
+	//hdr.LoadHDR("cubemap.hdr", true);
 
 	Prepare();
 
@@ -153,7 +177,23 @@ void OnScroll(GLFWwindow *window, double dx, double dy)
 
 void Prepare()
 {
-	shader.Load("simple.vs", "simple.fs");
+	simple_shader.Load("shaders\\simple.vs", "shaders\\simple.fs");
+	//cubemap_shader.Load("shaders\\cubemap.vs", "shaders\\cubemap.fs");
+	skybox_shader.Load("shaders\\skybox.vs", "shaders\\skybox.fs");
+
+	skybox = new Skybox;
+
+	cubemap = new Cubemap;
+	std::vector<std::string> cubemap_faces =
+	{
+		"textures\\skybox\\right.jpg",
+		"textures\\skybox\\left.jpg",
+		"textures\\skybox\\top.jpg",
+		"textures\\skybox\\bottom.jpg",
+		"textures\\skybox\\front.jpg",
+		"textures\\skybox\\back.jpg",
+	};
+	cubemap->Load(cubemap_faces);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -182,7 +222,7 @@ void Prepare()
 void Render()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const auto aspect = static_cast<float>(width) / static_cast<float>(height);
 
@@ -190,16 +230,25 @@ void Render()
 	const auto view       = camera.GetView();
 	const auto projection = camera.GetProjection(aspect);
 
-	shader.Use();
-	shader.SetMat4("model", model);
-	shader.SetMat4("view", view);
-	shader.SetMat4("projection", projection);
+	simple_shader.Use();
+	simple_shader.SetMat4("model", model);
+	simple_shader.SetMat4("view", view);
+	simple_shader.SetMat4("projection", projection);
 
 	glBindVertexArray(VAO);
-
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-
 	glBindVertexArray(0);
+
+	cubemap->Bind();
+
+	const auto skybox_view = glm::mat4(glm::mat3(camera.GetView()));
+
+	skybox_shader.Use();
+	skybox_shader.SetInt("skybox", 0);
+	skybox_shader.SetMat4("view", skybox_view);
+	skybox_shader.SetMat4("projection", projection);
+
+	skybox->Draw();
 }
 
 //==============================================================================
