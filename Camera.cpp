@@ -26,8 +26,8 @@ Camera::Camera(const glm::vec3 &position) noexcept :
 	up(0.0f, 1.0f, 0.0f),
 	yaw(-90.0f),
 	pitch(0.0),
-	speed(2.5),
-	sensitivity(0.1f),
+	speed(2.0),
+	sensitivity(0.05f),
 	fov(45.0f),
 	near(0.1f),
 	far(100.0f)
