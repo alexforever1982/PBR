@@ -5,8 +5,6 @@
 
 #include <string>
 
-#include "GLAD/glad.h"
-
 //==============================================================================
 
 class Texture
@@ -29,6 +27,9 @@ public:
 
 	void Load    (const std::string &path, bool flip) noexcept;
 	void LoadHDR (const std::string &path, bool flip) noexcept;
+
+	void Bind(unsigned int texture_unit = 0) const noexcept;
+	static void Unbind() noexcept;
 };
 
 //==============================================================================
