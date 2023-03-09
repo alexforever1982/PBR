@@ -89,13 +89,7 @@ void Camera::Rotate(float dx, float dy) noexcept
 void Camera::Zoom(float scroll) noexcept
 {
 	fov -= scroll;
-	//fov = std::max(1.0f, std::min(45.0f, fov));
-
-	if (fov < 1.0f)
-		fov = 1.0f;
-
-	if (fov > 45.0f)
-		fov = 45.0f;
+	fov = std::max(1.0f, std::min(45.0f, fov));
 }
 
 //==============================================================================
