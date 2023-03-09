@@ -6,30 +6,36 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "GLAD/glad.h"
+
 //==============================================================================
 
 void Texture::Init(const unsigned char *data) noexcept
 {
-	if (!texture)
-	{
-		glGenTextures(1, &texture);
-	}
-
 	glBindTexture(GL_TEXTURE_2D, texture);
-	
+
+	unsigned int format;
+
+	if (components == 1)
+	{
+		format = GL_RED;
+	}
+	else
 	if (components == 3)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		format = GL_RGBA;
 	}
 	else
 	if (components == 4)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		format = GL_RGBA;
 	}
-	
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
 	SetParameters();
-	
+
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -39,11 +45,6 @@ void Texture::Init(const unsigned char *data) noexcept
 
 void Texture::Init(const float *data) noexcept
 {
-	if (!texture)
-	{
-		glGenTextures(1, &texture);
-	}
-
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
@@ -83,6 +84,7 @@ Texture::Texture() noexcept :
 	height(0),
 	components(0)
 {
+	glGenTextures(1, &texture);
 }
 
 //==============================================================================
@@ -121,7 +123,22 @@ void Texture::LoadHDR(const std::string &path, bool flip) noexcept
 		return;
 	}
 
-	std::cout << "texture " << path << " not found" << std::endl;
+	std::cout << "error: texture " << path << " not found" << std::endl;
+}
+
+//==============================================================================
+
+void Texture::Bind(unsigned int texture_unit) const noexcept
+{
+	glActiveTexture(GL_TEXTURE0 + texture_unit);
+	glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+//==============================================================================
+
+void Texture::Unbind() noexcept
+{
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 //==============================================================================
