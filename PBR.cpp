@@ -7,8 +7,8 @@
 #include "GLAD/glad.h"
 #include "Camera.h"
 #include "Cubemap.h"
-#include "Skybox.h"
 #include "Shader.h"
+#include "Skybox.h"
 #include "Texture.h"
 
 #include "GLFW/glfw3.h"
@@ -33,7 +33,6 @@ const auto height = 720u;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 Shader simple_shader;
-//Shader cubemap_shader;
 Shader skybox_shader;
 
 Cubemap *cubemap;
@@ -63,21 +62,6 @@ int main()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-	//unsigned int FBO;
-	//unsigned int RBO;
-	//glGenFramebuffers(1, &FBO);
-	//glGenRenderbuffers(1, &RBO);
-
-	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	//glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	//Texture hdr;
-	//hdr.LoadHDR("cubemap.hdr", true);
 
 	Prepare();
 
@@ -178,7 +162,6 @@ void OnScroll(GLFWwindow *window, double dx, double dy)
 void Prepare()
 {
 	simple_shader.Load("shaders\\simple.vs", "shaders\\simple.fs");
-	//cubemap_shader.Load("shaders\\cubemap.vs", "shaders\\cubemap.fs");
 	skybox_shader.Load("shaders\\skybox.vs", "shaders\\skybox.fs");
 
 	skybox = new Skybox;
