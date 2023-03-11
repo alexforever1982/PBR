@@ -1,109 +1,44 @@
 
-#include "Cubemap.h"
-
-#include "Texture.h"
-
-#include <iostream>
-
-#include "stb_image.h"
-
-#include "GLAD/glad.h"
+#pragma once
 
 //==============================================================================
 
-void Cubemap::SetParameters() noexcept
-{
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // GL_LINEAR_MIPMAP_LINEAR
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
+#include <glm/glm.hpp>
 
 //==============================================================================
 
-Cubemap::Cubemap() noexcept :
-	cubemap(0)
+class Camera
 {
-	glGenTextures(1, &cubemap);
+private:
+	glm::vec3 position;
+	glm::vec3 front;
+	glm::vec3 up;
+	glm::vec3 right;
+	float yaw;
+	float pitch;
+	float speed;
+	float sensitivity;
+	float fov;
+	float near;
+	float far;
 
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-	//
-	//for (unsigned int i = 0; i < 6; i++)
-	//{
-	//	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
-	//}
-	//
-	//SetParameters();
-	//
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-}
+private:
+	void Update() noexcept;
 
-//==============================================================================
+public:
+	enum class Direction { FORWARD, BACKWARD, LEFT, RIGHT };
 
-Cubemap::~Cubemap() noexcept
-{
-	glDeleteTextures(1, &cubemap);
-}
+public:
+	Camera(const glm::vec3 &position) noexcept;
 
-//==============================================================================
+	const glm::vec3 &GetPosition() const noexcept;
 
-void Cubemap::Load(const std::vector<std::string> &faces, bool flip) noexcept
-{
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
+	glm::mat4 GetView() const noexcept;
+	glm::mat4 GetProjection(float aspect) const noexcept;
 
-	int width, height, components;
-	for (unsigned int i = 0; i < faces.size(); i++)
-	{
-		stbi_set_flip_vertically_on_load(flip);
-		const auto data = stbi_load(faces[i].c_str(), &width, &height, &components, 0);
-		if (data)
-		{
-			unsigned int format{GL_RGB};
-
-			if (components == 1)
-			{
-				format = GL_RED;
-			}
-			else
-			if (components == 3)
-			{
-				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-				format = GL_RGB;
-			}
-			else
-			if (components == 4)
-			{
-				format = GL_RGBA;
-			}
-
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		}
-		else
-		{
-			std::cout << "error: cubemap texture " << faces[i] << " is not found" << std::endl;
-		}
-	}
-
-	SetParameters();
-
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-}
-
-//==============================================================================
-
-void Cubemap::Bind(unsigned int texture_unit) const noexcept
-{
-	glActiveTexture(GL_TEXTURE0 + texture_unit);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-}
-
-//==============================================================================
-
-void Cubemap::Unbind() noexcept
-{
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
+	void Move(Direction direction, float dt) noexcept;
+	void Rotate (float dx, float dy)         noexcept;
+	void Zoom (float scroll)                 noexcept;
+};
 
 //==============================================================================
