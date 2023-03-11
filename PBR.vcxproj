@@ -132,20 +132,26 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Cubemap.h" />
+    <ClInclude Include="Drawable.h" />
     <ClInclude Include="GLAD\glad.h" />
     <ClInclude Include="GLAD\khrplatform.h" />
+    <ClInclude Include="Quad.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Cubemap.cpp" />
+    <ClCompile Include="Drawable.cpp" />
     <ClCompile Include="GLAD\glad.c" />
     <ClCompile Include="PBR.cpp" />
+    <ClCompile Include="Quad.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Skybox.cpp" />
+    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
