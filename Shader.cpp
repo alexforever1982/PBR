@@ -18,7 +18,7 @@ void Shader::CheckError(unsigned int shader, const std::string &type) const noex
 		if (!success)
 		{
 			glGetShaderInfoLog(shader, 1024, nullptr, info);
-			std::cout << type << " shader compilation error: " << info << std::endl;
+			std::cout << "error: " << type << " shader compilation: " << info << std::endl;
 		}
 	}
 	else
@@ -27,7 +27,7 @@ void Shader::CheckError(unsigned int shader, const std::string &type) const noex
 		if (!success)
 		{
 			glGetProgramInfoLog(shader, 1024, nullptr, info);
-			std::cout << "shader program linking error: " << info << std::endl;
+			std::cout << "error: program linking: " << info << std::endl;
 		}
 	}
 }
@@ -39,7 +39,7 @@ int Shader::GetLocation(const std::string &name) const noexcept
 	const auto location = glGetUniformLocation(program, name.c_str());
 	if (location < 0)
 	{
-		std::cout << name << " uniform location error" << std::endl;
+		std::cout << "error: " << name << " uniform location" << std::endl;
 	}
 	return location;
 }
@@ -113,7 +113,7 @@ void Shader::Load(const std::string &vpath, const std::string &fpath) noexcept
 	}
 	catch (const std::ifstream::failure &)
 	{
-		std::cout << "error: shader file not found" << std::endl;
+		std::cout << "error: shader file is not found" << std::endl;
 	}
 }
 
