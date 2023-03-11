@@ -9,6 +9,7 @@
 #include "Cubemap.h"
 #include "Shader.h"
 #include "Skybox.h"
+#include "Sphere.h"
 #include "Texture.h"
 
 #include "GLFW/glfw3.h"
@@ -22,6 +23,7 @@ void OnScroll (GLFWwindow *window, double dx, double dy);
 void ProcessInput(GLFWwindow *window);
 
 void Prepare();
+void Cleanup();
 
 void Render();
 
@@ -33,10 +35,17 @@ const auto height = 720u;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 Shader simple_shader;
+Shader phong_shader;
+//Shader cubemap_shader;
 Shader skybox_shader;
 
+Texture *diffuse_map;
+Texture *specular_map;
+
 Cubemap *cubemap;
-Skybox *skybox;
+Skybox  *skybox;
+
+Sphere *sphere;
 
 unsigned int VAO;
 unsigned int VBO;
@@ -62,6 +71,21 @@ int main()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+	//unsigned int FBO;
+	//unsigned int RBO;
+	//glGenFramebuffers(1, &FBO);
+	//glGenRenderbuffers(1, &RBO);
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	//glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	//Texture hdr;
+	//hdr.LoadHDR("cubemap.hdr", true);
 
 	Prepare();
 
@@ -73,6 +97,8 @@ int main()
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	Cleanup();
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
@@ -162,7 +188,27 @@ void OnScroll(GLFWwindow *window, double dx, double dy)
 void Prepare()
 {
 	simple_shader.Load("shaders\\simple.vs", "shaders\\simple.fs");
+	phong_shader.Load("shaders\\phong.vs", "shaders\\phong.fs");
+	//cubemap_shader.Load("shaders\\cubemap.vs", "shaders\\cubemap.fs");
 	skybox_shader.Load("shaders\\skybox.vs", "shaders\\skybox.fs");
+
+	diffuse_map  = new Texture;
+	specular_map = new Texture;
+
+	diffuse_map->Load("textures\\materials\\gold\\albedo.png", false);
+	specular_map->Load("textures\\materials\\gold\\roughness.png", false);
+
+	simple_shader.Use();
+	simple_shader.SetVec3("color", glm::vec3(1.0, 1.0, 1.0));
+
+	phong_shader.Use();
+	phong_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
+	phong_shader.SetVec3("light.ambient",  glm::vec3(1.0f, 1.0f, 1.0f));
+	phong_shader.SetVec3("light.diffuse",  glm::vec3(1.0f, 1.0f, 1.0f));
+	phong_shader.SetVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+	phong_shader.SetInt("material.diffuse",  0);
+	phong_shader.SetInt("material.specular", 1);
+	phong_shader.SetFloat("material.shininess", 64.0f);
 
 	skybox = new Skybox;
 
@@ -176,7 +222,9 @@ void Prepare()
 		"textures\\skybox\\front.jpg",
 		"textures\\skybox\\back.jpg",
 	};
-	cubemap->Load(cubemap_faces);
+	cubemap->Load(cubemap_faces, false);
+
+	sphere = new Sphere;
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -202,6 +250,19 @@ void Prepare()
 
 //==============================================================================
 
+void Cleanup()
+{
+	delete diffuse_map;
+	delete specular_map;
+
+	delete cubemap;
+	delete skybox;
+
+	delete sphere;
+}
+
+//==============================================================================
+
 void Render()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -209,7 +270,7 @@ void Render()
 
 	const auto aspect = static_cast<float>(width) / static_cast<float>(height);
 
-	const auto model      = glm::mat4(1.0f);
+	const auto model      = glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 	const auto view       = camera.GetView();
 	const auto projection = camera.GetProjection(aspect);
 
@@ -218,17 +279,26 @@ void Render()
 	simple_shader.SetMat4("view", view);
 	simple_shader.SetMat4("projection", projection);
 
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
+	phong_shader.Use();
+	phong_shader.SetMat4("model", model);
+	phong_shader.SetMat4("view", view);
+	phong_shader.SetMat4("projection", projection);
+	phong_shader.SetVec3("viewPos", camera.GetPosition());
 
-	cubemap->Bind();
+	//glBindVertexArray(VAO);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glBindVertexArray(0);
 
-	const auto skybox_view = glm::mat4(glm::mat3(camera.GetView()));
+	diffuse_map->Bind(0);
+	specular_map->Bind(1);
+
+	sphere->Draw();
+
+	cubemap->Bind(0);
 
 	skybox_shader.Use();
 	skybox_shader.SetInt("skybox", 0);
-	skybox_shader.SetMat4("view", skybox_view);
+	skybox_shader.SetMat4("view", view);
 	skybox_shader.SetMat4("projection", projection);
 
 	skybox->Draw();
