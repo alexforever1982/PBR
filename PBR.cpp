@@ -182,7 +182,7 @@ void Prepare()
 	specular_map->Load("textures\\materials\\gold\\roughness.png", false);
 
 	simple_shader.Use();
-	simple_shader.SetVec3("color", glm::vec3(1.0, 1.0, 1.0));
+	simple_shader.SetVec3("color", glm::vec3(1.0, 0.807843, 0.407843));
 
 	phong_shader.Use();
 	phong_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
