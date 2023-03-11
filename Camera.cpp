@@ -37,6 +37,13 @@ Camera::Camera(const glm::vec3 &position) noexcept :
 
 //==============================================================================
 
+const glm::vec3 &Camera::GetPosition() const noexcept
+{
+	return position;
+}
+
+//==============================================================================
+
 glm::mat4 Camera::GetView() const noexcept
 {
 	return glm::lookAt(position, position + front, up);
