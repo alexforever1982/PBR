@@ -14,7 +14,7 @@ void Texture::Init(const unsigned char *data) noexcept
 {
 	glBindTexture(GL_TEXTURE_2D, texture);
 
-	unsigned int format;
+	unsigned int format{GL_RGB};
 
 	if (components == 1)
 	{
@@ -24,7 +24,7 @@ void Texture::Init(const unsigned char *data) noexcept
 	if (components == 3)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		format = GL_RGBA;
+		format = GL_RGB;
 	}
 	else
 	if (components == 4)
@@ -123,7 +123,7 @@ void Texture::LoadHDR(const std::string &path, bool flip) noexcept
 		return;
 	}
 
-	std::cout << "error: texture " << path << " not found" << std::endl;
+	std::cout << "error: texture " << path << " is not found" << std::endl;
 }
 
 //==============================================================================
