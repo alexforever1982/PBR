@@ -3,16 +3,20 @@
 
 //==============================================================================
 
-class Skybox
+#include "Drawable.h"
+
+//==============================================================================
+
+class Skybox : public Drawable
 {
 private:
-	unsigned int VAO, VBO;
+	//unsigned int VAO, VBO;
 
 public:
-	Skybox() noexcept;
-	~Skybox();
+	Skybox()  noexcept;
+	~Skybox() noexcept;
 
-	void Draw() const noexcept;
+	void Draw() const noexcept override;
 };
 
 //==============================================================================
