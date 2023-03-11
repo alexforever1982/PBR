@@ -36,7 +36,6 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 Shader simple_shader;
 Shader phong_shader;
-//Shader cubemap_shader;
 Shader skybox_shader;
 
 Texture *diffuse_map;
@@ -71,22 +70,7 @@ int main()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	//glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-	//unsigned int FBO;
-	//unsigned int RBO;
-	//glGenFramebuffers(1, &FBO);
-	//glGenRenderbuffers(1, &RBO);
-
-	//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	//glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	//Texture hdr;
-	//hdr.LoadHDR("cubemap.hdr", true);
-
+	
 	Prepare();
 
 	while (!glfwWindowShouldClose(window))
@@ -189,7 +173,6 @@ void Prepare()
 {
 	simple_shader.Load("shaders\\simple.vs", "shaders\\simple.fs");
 	phong_shader.Load("shaders\\phong.vs", "shaders\\phong.fs");
-	//cubemap_shader.Load("shaders\\cubemap.vs", "shaders\\cubemap.fs");
 	skybox_shader.Load("shaders\\skybox.vs", "shaders\\skybox.fs");
 
 	diffuse_map  = new Texture;
@@ -284,11 +267,7 @@ void Render()
 	phong_shader.SetMat4("view", view);
 	phong_shader.SetMat4("projection", projection);
 	phong_shader.SetVec3("viewPos", camera.GetPosition());
-
-	//glBindVertexArray(VAO);
-	//glDrawArrays(GL_TRIANGLES, 0, 3);
-	//glBindVertexArray(0);
-
+	
 	diffuse_map->Bind(0);
 	specular_map->Bind(1);
 
