@@ -81,13 +81,9 @@ Skybox::~Skybox() noexcept
 
 void Skybox::Draw() const noexcept
 {
-    glDepthFunc(GL_LEQUAL);
-    
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-
-    glDepthFunc(GL_LESS);
 }
 
 //==============================================================================
