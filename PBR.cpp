@@ -7,6 +7,7 @@
 #include "GLAD/glad.h"
 #include "Camera.h"
 #include "Cubemap.h"
+#include "Quad.h"
 #include "Shader.h"
 #include "Skybox.h"
 #include "Sphere.h"
@@ -34,17 +35,39 @@ const auto height = 720u;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-Shader simple_shader;
-Shader phong_shader;
-Shader skybox_shader;
+////Shader simple_shader;
+////Shader phong_shader;
+////Shader skybox_shader;
+Shader pbr_shader;
+Shader rect2cubemap_shader;
+Shader irradiance_shader;
+Shader prefilter_shader;
+Shader brdf_shader;
+Shader background_shader;
 
-Texture *diffuse_map;
-Texture *specular_map;
+////Texture *diffuse_map;
+////Texture *specular_map;
 
-Cubemap *cubemap;
+Texture *albedo_map;
+Texture *normal_map;
+Texture *metallic_map;
+Texture *roughness_map;
+Texture *ao_map;
+
+Texture *hdr_texture;
+Cubemap *env_cubemap;
+Cubemap *irradiance_map;
+Cubemap *prefilter_map;
+Texture *brdfLUT_texture;
+
+////Cubemap *cubemap;
+
 Skybox  *skybox;
-
 Sphere *sphere;
+Quad *quad;
+
+unsigned int FBO;
+unsigned int RBO;
 
 //==============================================================================
 
@@ -67,7 +90,9 @@ int main()
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
 	glEnable(GL_DEPTH_TEST);
-	
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	Prepare();
 
 	while (!glfwWindowShouldClose(window))
@@ -80,7 +105,7 @@ int main()
 	}
 
 	Cleanup();
-	
+
 	glfwTerminate();
 	return 0;
 }
@@ -165,56 +190,229 @@ void OnScroll(GLFWwindow *window, double dx, double dy)
 
 void Prepare()
 {
-	simple_shader.Load("shaders\\simple.vs", "shaders\\simple.fs");
-	phong_shader.Load("shaders\\phong.vs", "shaders\\phong.fs");
-	skybox_shader.Load("shaders\\skybox.vs", "shaders\\skybox.fs");
+	////simple_shader       .Load("shaders\\simple.vs",     "shaders\\simple.fs");
+	////phong_shader        .Load("shaders\\phong.vs",      "shaders\\phong.fs");
+	////skybox_shader       .Load("shaders\\skybox.vs",     "shaders\\skybox.fs");
+	pbr_shader          .Load("shaders\\pbr.vs",        "shaders\\pbr.fs");
+	rect2cubemap_shader .Load("shaders\\cubemap.vs",    "shaders\\rect2cubemap.fs");
+	irradiance_shader   .Load("shaders\\cubemap.vs",    "shaders\\irradiance.fs");
+	prefilter_shader    .Load("shaders\\cubemap.vs",    "shaders\\prefilter.fs");
+	brdf_shader         .Load("shaders\\brdf.vs",       "shaders\\brdf.fs");
+	background_shader   .Load("shaders\\background.vs", "shaders\\background.fs");
 
-	diffuse_map  = new Texture;
-	specular_map = new Texture;
+	////diffuse_map   = new Texture;
+	////specular_map  = new Texture;
 
-	diffuse_map->Load("textures\\materials\\gold\\albedo.png", false);
-	specular_map->Load("textures\\materials\\gold\\roughness.png", false);
+	albedo_map    = new Texture;
+	normal_map    = new Texture;
+	metallic_map  = new Texture;
+	roughness_map = new Texture;
+	ao_map        = new Texture;
 
-	simple_shader.Use();
-	simple_shader.SetVec3("color", glm::vec3(1.0, 0.807843, 0.407843));
+	const std::string material("gold");
 
-	phong_shader.Use();
-	phong_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
-	phong_shader.SetVec3("light.ambient",  glm::vec3(1.0f, 1.0f, 1.0f));
-	phong_shader.SetVec3("light.diffuse",  glm::vec3(1.0f, 1.0f, 1.0f));
-	phong_shader.SetVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-	phong_shader.SetInt("material.diffuse",  0);
-	phong_shader.SetInt("material.specular", 1);
-	phong_shader.SetFloat("material.shininess", 64.0f);
+	////diffuse_map   ->Load("textures\\materials\\" + material + "\\albedo.png");
+	////specular_map  ->Load("textures\\materials\\" + material + "\\metallic.png");
+
+	albedo_map    ->Load("textures\\materials\\" + material + "\\albedo.png");
+	normal_map    ->Load("textures\\materials\\" + material + "\\normal.png");
+	metallic_map  ->Load("textures\\materials\\" + material + "\\metallic.png");
+	roughness_map ->Load("textures\\materials\\" + material + "\\roughness.png");
+	ao_map        ->Load("textures\\materials\\" + material + "\\ao.png");
+
+	////simple_shader.Use();
+	////simple_shader.SetVec3("color", glm::vec3(1.0, 0.807843, 0.407843));
+
+	////phong_shader.Use();
+	////phong_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
+	////phong_shader.SetVec3("light.ambient",  glm::vec3(1.0f, 1.0f, 1.0f));
+	////phong_shader.SetVec3("light.diffuse",  glm::vec3(1.0f, 1.0f, 1.0f));
+	////phong_shader.SetVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+	////phong_shader.SetInt("material.diffuse",  0);
+	////phong_shader.SetInt("material.specular", 1);
+	////phong_shader.SetInt("material.normal",   2);
+	////phong_shader.SetFloat("material.shininess", 64.0f);
+
+	pbr_shader.Use();
+	pbr_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
+	pbr_shader.SetVec3("light.diffuse",  glm::vec3(1.0f, 1.0f, 1.0f));
+	pbr_shader.SetVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+	pbr_shader.SetInt("irradiance_map",     0);
+	pbr_shader.SetInt("prefilter_map",      1);
+	pbr_shader.SetInt("brdfLUT",            2);
+	pbr_shader.SetInt("material.albedo",    3);
+	pbr_shader.SetInt("material.normal",    4);
+	pbr_shader.SetInt("material.metallic",  5);
+	pbr_shader.SetInt("material.roughness", 6);
+	pbr_shader.SetInt("material.ao",        7);
+
+	background_shader.Use();
+	background_shader.SetInt("environment_map", 0);
 
 	skybox = new Skybox;
 
-	cubemap = new Cubemap;
-	std::vector<std::string> cubemap_faces =
-	{
-		"textures\\skybox\\right.jpg",
-		"textures\\skybox\\left.jpg",
-		"textures\\skybox\\top.jpg",
-		"textures\\skybox\\bottom.jpg",
-		"textures\\skybox\\front.jpg",
-		"textures\\skybox\\back.jpg",
-	};
-	cubemap->Load(cubemap_faces, false);
+	////cubemap = new Cubemap(width, height);
+	////std::vector<std::string> cubemap_faces =
+	////{
+	////	"textures\\skybox\\right.jpg",
+	////	"textures\\skybox\\left.jpg",
+	////	"textures\\skybox\\top.jpg",
+	////	"textures\\skybox\\bottom.jpg",
+	////	"textures\\skybox\\front.jpg",
+	////	"textures\\skybox\\back.jpg",
+	////};
+	////cubemap->Load(cubemap_faces, false);
 
 	sphere = new Sphere;
+
+	glGenFramebuffers(1, &FBO);
+	glGenRenderbuffers(1, &RBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	hdr_texture = new Texture;
+	hdr_texture->LoadHDR("textures\\hdr\\cubemap.hdr");
+
+	env_cubemap = new Cubemap(512, 512);
+
+	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	glm::mat4 capture_views[] =
+	{
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
+
+	rect2cubemap_shader.Use();
+	rect2cubemap_shader.SetInt("rectangular_map", 0);
+	rect2cubemap_shader.SetMat4("projection", capture_projection);
+
+	hdr_texture->Bind(0);
+
+	glViewport(0, 0, 512, 512);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		rect2cubemap_shader.SetMat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, env_cubemap->GetID(), 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		skybox->Draw();
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	env_cubemap->GenerateMipmap();
+
+	irradiance_map = new Cubemap(32, 32, false);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+	irradiance_shader.Use();
+	irradiance_shader.SetInt("environment_map", 0);
+	irradiance_shader.SetMat4("projection", capture_projection);
+
+	env_cubemap->Bind(0);
+
+	glViewport(0, 0, 32, 32);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		irradiance_shader.SetMat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_map->GetID(), 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		skybox->Draw();
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	prefilter_map = new Cubemap(128, 128);
+	prefilter_map->GenerateMipmap();
+
+	prefilter_shader.Use();
+	prefilter_shader.SetInt("environment_map", 0);
+	prefilter_shader.SetMat4("projection", capture_projection);
+
+	env_cubemap->Bind(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	unsigned int max_mip_levels = 5;
+	for (unsigned int mip = 0; mip < max_mip_levels; mip++)
+	{
+		const auto mip_width  = static_cast<unsigned int>(128 * pow(0.5, mip));
+		const auto mip_height = static_cast<unsigned int>(128 * pow(0.5, mip));
+		glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mip_width, mip_height);
+		glViewport(0, 0, mip_width, mip_height);
+
+		const auto roughness = static_cast<float>(mip) / static_cast<float>(max_mip_levels - 1);
+		prefilter_shader.SetFloat("roughness", roughness);
+		for (unsigned int i = 0; i < 6; i++)
+		{
+			prefilter_shader.SetMat4("view", capture_views[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilter_map->GetID(), mip);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			skybox->Draw();
+		}
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	brdfLUT_texture = new Texture;
+	
+	brdfLUT_texture->Bind(0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
+	brdfLUT_texture->SetParametersHDR();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUT_texture->GetID(), 0);
+	glViewport(0, 0, 512, 512);
+
+	brdf_shader.Use();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	quad = new Quad;
+
+	quad->Draw();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glViewport(0, 0, width, height);
 }
 
 //==============================================================================
 
 void Cleanup()
 {
-	delete diffuse_map;
-	delete specular_map;
+	////delete diffuse_map;
+	////delete specular_map;
 
-	delete cubemap;
+	delete albedo_map;
+	delete normal_map;
+	delete metallic_map;
+	delete roughness_map;
+	delete ao_map;
+
+	delete hdr_texture;
+	delete env_cubemap;
+	delete irradiance_map;
+	delete prefilter_map;
+	delete brdfLUT_texture;
+
+	//delete cubemap;
 	delete skybox;
-
 	delete sphere;
+	delete quad;
 }
 
 //==============================================================================
@@ -230,30 +428,61 @@ void Render()
 	const auto view       = camera.GetView();
 	const auto projection = camera.GetProjection(aspect);
 
-	simple_shader.Use();
-	simple_shader.SetMat4("model", model);
-	simple_shader.SetMat4("view", view);
-	simple_shader.SetMat4("projection", projection);
+	////simple_shader.Use();
+	////simple_shader.SetMat4("model", model);
+	////simple_shader.SetMat4("view", view);
+	////simple_shader.SetMat4("projection", projection);
 
-	phong_shader.Use();
-	phong_shader.SetMat4("model", model);
-	phong_shader.SetMat4("view", view);
-	phong_shader.SetMat4("projection", projection);
-	phong_shader.SetVec3("viewPos", camera.GetPosition());
-	
-	diffuse_map->Bind(0);
-	specular_map->Bind(1);
+	////phong_shader.Use();
+	////phong_shader.SetMat4("model", model);
+	////phong_shader.SetMat4("view", view);
+	////phong_shader.SetMat4("projection", projection);
+	////phong_shader.SetVec3("camera", camera.GetPosition());
+
+	////diffuse_map  ->Bind(0);
+	////specular_map ->Bind(1);
+	////normal_map   ->Bind(2);
+
+	pbr_shader.Use();
+	pbr_shader.SetMat4("model", model);
+	pbr_shader.SetMat4("view", view);
+	pbr_shader.SetMat4("projection", projection);
+	pbr_shader.SetVec3("camera", camera.GetPosition());
+
+	irradiance_map  ->Bind(0);
+	prefilter_map   ->Bind(1);
+	brdfLUT_texture ->Bind(2);
+
+	albedo_map      ->Bind(3);
+	normal_map      ->Bind(4);
+	metallic_map    ->Bind(5);
+	roughness_map   ->Bind(6);
+	ao_map          ->Bind(7);
 
 	sphere->Draw();
 
-	cubemap->Bind(0);
+	////cubemap->Bind(0);
 
-	skybox_shader.Use();
-	skybox_shader.SetInt("skybox", 0);
-	skybox_shader.SetMat4("view", view);
-	skybox_shader.SetMat4("projection", projection);
+	////skybox_shader.Use();
+	////skybox_shader.SetInt("skybox", 0);
+	////skybox_shader.SetMat4("view", view);
+	////skybox_shader.SetMat4("projection", projection);
 
+	background_shader.Use();
+	background_shader.SetMat4("view", view);
+	background_shader.SetMat4("projection", projection);
+
+	env_cubemap->Bind(0);
+	//irradiance_map->Bind(0);
+	//prefilter_map->Bind(0);
+	
+	//// render BRDF map to screen
+	//brdf_shader.Use();
+	//quad->Draw();
+
+	glDepthFunc(GL_LEQUAL);
 	skybox->Draw();
+	glDepthFunc(GL_LESS);
 }
 
 //==============================================================================
