@@ -23,10 +23,16 @@ void OnScroll (GLFWwindow *window, double dx, double dy);
 
 void ProcessInput(GLFWwindow *window);
 
-void Prepare();
-void Cleanup();
+void Prepare()      noexcept;
+void LoadShaders()  noexcept;
+void LoadTextures() noexcept;
+void PrepareEnvironmentMap   (const glm::mat4 &capture_projection, const glm::mat4 capture_views[6]) noexcept;
+void CalculateIrradiance     (const glm::mat4 &capture_projection, const glm::mat4 capture_views[6]) noexcept;
+void PrefilterEnvironmentMap (const glm::mat4& capture_projection, const glm::mat4 capture_views[6]) noexcept;
+void PrecomputeBRDF() noexcept;
+void Cleanup()      noexcept;
 
-void Render();
+void Render() noexcept;
 
 //==============================================================================
 
@@ -86,6 +92,8 @@ int main()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	Prepare();
+
+	glViewport(0, 0, width, height);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -180,28 +188,10 @@ void OnScroll(GLFWwindow *window, double dx, double dy)
 
 //==============================================================================
 
-void Prepare()
+void Prepare() noexcept
 {
-	pbr_shader          .Load("shaders\\pbr.vs",        "shaders\\pbr.fs");
-	rect2cubemap_shader .Load("shaders\\cubemap.vs",    "shaders\\rect2cubemap.fs");
-	irradiance_shader   .Load("shaders\\cubemap.vs",    "shaders\\irradiance.fs");
-	prefilter_shader    .Load("shaders\\cubemap.vs",    "shaders\\prefilter.fs");
-	brdf_shader         .Load("shaders\\brdf.vs",       "shaders\\brdf.fs");
-	background_shader   .Load("shaders\\background.vs", "shaders\\background.fs");
-	
-	albedo_map    = new Texture;
-	normal_map    = new Texture;
-	metallic_map  = new Texture;
-	roughness_map = new Texture;
-	ao_map        = new Texture;
-
-	const std::string material("gold");
-	
-	albedo_map    ->Load("textures\\materials\\" + material + "\\albedo.png");
-	normal_map    ->Load("textures\\materials\\" + material + "\\normal.png");
-	metallic_map  ->Load("textures\\materials\\" + material + "\\metallic.png");
-	roughness_map ->Load("textures\\materials\\" + material + "\\roughness.png");
-	ao_map        ->Load("textures\\materials\\" + material + "\\ao.png");
+	LoadShaders();
+	LoadTextures();
 	
 	pbr_shader.Use();
 	pbr_shader.SetVec3("light.position", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -219,21 +209,11 @@ void Prepare()
 	background_shader.Use();
 	background_shader.SetInt("environment_map", 0);
 
-	skybox = new Skybox;
+	skybox = new Skybox;	
 	sphere = new Sphere;
 
 	glGenFramebuffers(1, &FBO);
 	glGenRenderbuffers(1, &RBO);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	hdr_texture = new Texture;
-	hdr_texture->LoadHDR("textures\\hdr\\cubemap.hdr");
-
-	env_cubemap = new Cubemap(512, 512);
 
 	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 	glm::mat4 capture_views[] =
@@ -245,6 +225,59 @@ void Prepare()
 		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
 		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
 	};
+
+	PrepareEnvironmentMap(capture_projection, capture_views);
+	CalculateIrradiance(capture_projection, capture_views);
+	PrefilterEnvironmentMap(capture_projection, capture_views);
+	PrecomputeBRDF();
+}
+
+//==============================================================================
+
+void LoadShaders() noexcept
+{
+	pbr_shader          .Load("shaders\\pbr.vs",        "shaders\\pbr.fs");
+	rect2cubemap_shader .Load("shaders\\cubemap.vs",    "shaders\\rect2cubemap.fs");
+	irradiance_shader   .Load("shaders\\cubemap.vs",    "shaders\\irradiance.fs");
+	prefilter_shader    .Load("shaders\\cubemap.vs",    "shaders\\prefilter.fs");
+	brdf_shader         .Load("shaders\\brdf.vs",       "shaders\\brdf.fs");
+	background_shader   .Load("shaders\\background.vs", "shaders\\background.fs");
+}
+
+//==============================================================================
+
+void LoadTextures() noexcept
+{
+	albedo_map    = new Texture;
+	normal_map    = new Texture;
+	metallic_map  = new Texture;
+	roughness_map = new Texture;
+	ao_map        = new Texture;
+
+	const std::string material("gold");
+	
+	albedo_map    ->Load("textures\\materials\\" + material + "\\albedo.png");
+	normal_map    ->Load("textures\\materials\\" + material + "\\normal.png");
+	metallic_map  ->Load("textures\\materials\\" + material + "\\metallic.png");
+	roughness_map ->Load("textures\\materials\\" + material + "\\roughness.png");
+	ao_map        ->Load("textures\\materials\\" + material + "\\ao.png");
+}
+
+//==============================================================================
+
+void PrepareEnvironmentMap(const glm::mat4 &capture_projection, const glm::mat4 capture_views[6]) noexcept
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindRenderbuffer(GL_FRAMEBUFFER, RBO);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	hdr_texture = new Texture;
+	hdr_texture->LoadHDR("textures\\hdr\\cubemap.hdr");
+
+	env_cubemap = new Cubemap(512, 512);
+	env_cubemap->GenerateMipmap();
 
 	rect2cubemap_shader.Use();
 	rect2cubemap_shader.SetInt("rectangular_map", 0);
@@ -262,15 +295,20 @@ void Prepare()
 
 		skybox->Draw();
 	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
 
-	env_cubemap->GenerateMipmap();
+//==============================================================================
 
-	irradiance_map = new Cubemap(32, 32, false);
-
+void CalculateIrradiance(const glm::mat4 &capture_projection, const glm::mat4 capture_views[6]) noexcept
+{
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+	irradiance_map = new Cubemap(32, 32, false);
 
 	irradiance_shader.Use();
 	irradiance_shader.SetInt("environment_map", 0);
@@ -288,8 +326,15 @@ void Prepare()
 
 		skybox->Draw();
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+//==============================================================================
+
+void PrefilterEnvironmentMap(const glm::mat4 &capture_projection, const glm::mat4 capture_views[6]) noexcept
+{
 	prefilter_map = new Cubemap(128, 128);
 	prefilter_map->GenerateMipmap();
 
@@ -321,9 +366,14 @@ void Prepare()
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
+//==============================================================================
+
+void PrecomputeBRDF() noexcept
+{
 	brdfLUT_texture = new Texture;
-	
+
 	brdfLUT_texture->Bind(0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, nullptr);
 	brdfLUT_texture->SetParametersHDR();
@@ -349,7 +399,7 @@ void Prepare()
 
 //==============================================================================
 
-void Cleanup()
+void Cleanup() noexcept
 {
 	delete albedo_map;
 	delete normal_map;
@@ -366,14 +416,14 @@ void Cleanup()
 	delete skybox;
 	delete sphere;
 	delete quad;
-	
+
 	glDeleteFramebuffers(1, &FBO);
 	glDeleteRenderbuffers(1, &RBO);
 }
 
 //==============================================================================
 
-void Render()
+void Render() noexcept
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
