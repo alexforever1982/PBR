@@ -96,6 +96,13 @@ Texture::~Texture() noexcept
 
 //==============================================================================
 
+unsigned int Texture::GetID() const noexcept
+{
+	return texture;
+}
+
+//==============================================================================
+
 void Texture::Load(const std::string &path, bool flip) noexcept
 {
 	stbi_set_flip_vertically_on_load(flip);
