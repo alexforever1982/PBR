@@ -29,8 +29,8 @@ void ProcessInput(GLFWwindow *window);
 
 void Prepare       (Scene *scene) noexcept;
 void LoadMaterials (Scene *scene) noexcept;
-void AddLights     (Scene *scene) noexcept;
 void AddObjects    (Scene *scene) noexcept;
+void AddLights     (Scene *scene) noexcept;
 
 //==============================================================================
 
@@ -219,16 +219,6 @@ void LoadMaterials(Scene *scene) noexcept
 
 //==============================================================================
 
-void AddLights(Scene *scene) noexcept
-{
-	scene->AddLight("light1", glm::vec3(-10.0f,  10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
-	scene->AddLight("light2", glm::vec3( 10.0f,  10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
-	scene->AddLight("light3", glm::vec3(-10.0f, -10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
-	scene->AddLight("light4", glm::vec3( 10.0f, -10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
-}
-
-//==============================================================================
-
 void AddObjects(Scene *scene) noexcept
 {
 	auto plastic_sphere = scene->AddObject("plastic_sphere", new Sphere);
@@ -245,9 +235,19 @@ void AddObjects(Scene *scene) noexcept
 	
 	const auto model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5, 0.5, 0.5));
 
-	plastic_sphere ->SetModel(glm::translate(model, glm::vec3(-3.0, 0.0, 2.0)));
-	gold_sphere    ->SetModel(glm::translate(model, glm::vec3( 0.0, 0.0, 2.0)));
-	iron_sphere    ->SetModel(glm::translate(model, glm::vec3( 3.0, 0.0, 2.0)));
+	plastic_sphere ->SetModel(glm::translate(model, glm::vec3(-3.0, 0.0, 0.0)));
+	gold_sphere    ->SetModel(glm::translate(model, glm::vec3( 0.0, 0.0, 0.0)));
+	iron_sphere    ->SetModel(glm::translate(model, glm::vec3( 3.0, 0.0, 0.0)));
+}
+
+//==============================================================================
+
+void AddLights(Scene *scene) noexcept
+{
+	scene->AddLight("light1", glm::vec3(-10.0f,  10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
+	scene->AddLight("light2", glm::vec3( 10.0f,  10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
+	scene->AddLight("light3", glm::vec3(-10.0f, -10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
+	scene->AddLight("light4", glm::vec3( 10.0f, -10.0f, 10.0f), glm::vec3(300.0f, 300.0f, 300.0f));
 }
 
 //==============================================================================
