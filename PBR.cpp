@@ -22,15 +22,15 @@
 //==============================================================================
 
 void OnResize (GLFWwindow *window, int width, int height);
-void OnMouse  (GLFWwindow *window, double x, double y);
+void OnMouse  (GLFWwindow *window, double  x, double  y);
 void OnScroll (GLFWwindow *window, double dx, double dy);
 
 void ProcessInput(GLFWwindow *window);
 
-void Prepare(Scene *scene) noexcept;
-void LoadMaterials(Scene *scene) noexcept;
-void AddLights(Scene *scene) noexcept;
-void AddObjects(Scene *scene) noexcept;
+void Prepare       (Scene *scene) noexcept;
+void LoadMaterials (Scene *scene) noexcept;
+void AddLights     (Scene *scene) noexcept;
+void AddObjects    (Scene *scene) noexcept;
 
 //==============================================================================
 
@@ -82,7 +82,7 @@ int main()
 
 //==============================================================================
 
-void ProcessInput(GLFWwindow* window)
+void ProcessInput(GLFWwindow *window)
 {
 	const auto esc = glfwGetKey(window, GLFW_KEY_ESCAPE);
 	if (esc == GLFW_PRESS)
@@ -120,7 +120,7 @@ void ProcessInput(GLFWwindow* window)
 
 //==============================================================================
 
-void OnResize(GLFWwindow* window, int width, int height)
+void OnResize(GLFWwindow *window, int width, int height)
 {
 	if (scene)
 	{
@@ -130,7 +130,7 @@ void OnResize(GLFWwindow* window, int width, int height)
 
 //==============================================================================
 
-void OnMouse(GLFWwindow* window, double x, double y)
+void OnMouse(GLFWwindow *window, double x, double y)
 {
 	static auto start = false;
 	static auto last_x = static_cast<float>(width) / 2.0f;
@@ -166,8 +166,8 @@ void Prepare(Scene *scene) noexcept
 	scene->SetSize(width, height);
 
 	LoadMaterials(scene);
-	AddLights(scene);
 	AddObjects(scene);
+	AddLights(scene);
 
 	scene->AddCubemap("textures\\hdr\\cubemap.hdr");
 }
