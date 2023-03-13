@@ -7,7 +7,7 @@
 
 //==============================================================================
 
-class Quad : Drawable
+class Quad : public Drawable
 {
 public:
 	Quad()  noexcept;
