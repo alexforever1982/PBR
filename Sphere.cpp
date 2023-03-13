@@ -117,9 +117,14 @@ Sphere::~Sphere() noexcept
 
 void Sphere::Draw() const noexcept
 {
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLE_STRIP, indices_count, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+
+	glDisable(GL_CULL_FACE);
 }
 
 //==============================================================================
