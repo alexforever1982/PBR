@@ -5,7 +5,6 @@ Physically Based Rendering
     <img src="/demo.png" width="600px"</img> 
 </div>
 
-
-Materials: plastic, gold, iron
+<br>Materials: plastic, gold, iron
 
 Controls: W, S, A, D + mouse
